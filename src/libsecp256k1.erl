@@ -15,6 +15,7 @@
 		 rand256/0,
 		 ec_seckey_verify/1,
 		 ec_pubkey_create/2,
+		 ec_pubkey_compress/1,
 		 ec_pubkey_decompress/1,
 		 ec_pubkey_verify/1,
 		 ec_privkey_export/2,
@@ -70,6 +71,10 @@ ec_seckey_verify(_) ->
 
 -spec ec_pubkey_create(private_key(), compression()) -> {ok, public_key()} | {error, string()}.
 ec_pubkey_create(_, _) ->
+	erlang:nif_error({error, not_loaded}).
+
+-spec ec_pubkey_compress(public_key()) -> {ok, public_key()} | {error, string()}.
+ec_pubkey_compress(_) ->
 	erlang:nif_error({error, not_loaded}).
 
 -spec ec_pubkey_decompress(public_key()) -> {ok, public_key()} | {error, string()}.

@@ -213,6 +213,37 @@ ec_pubkey_create(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 
 }
 
+static ERL_NIF_TERM
+ec_pubkey_compress(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+
+	ErlNifBinary pubkey;
+	ERL_NIF_TERM r;
+	unsigned char* compressedkey;
+	size_t compressedkeylen = 33;
+	secp256k1_pubkey pubkeyt;
+
+	if (!enif_inspect_binary(env, argv[0], &pubkey)) {
+		return enif_make_badarg(env);
+	}
+
+	if ((pubkey.size != 33) && (pubkey.size != 65)) {
+		return error_result(env, "Public key size != 33 or 65 bytes");
+	}
+
+	compressedkey = enif_make_new_binary(env, compressedkeylen, &r);
+
+	if (secp256k1_ec_pubkey_parse(ctx, &pubkeyt, pubkey.data, pubkey.size) != 1) {
+		return error_result(env, "Public key parse error");
+	}
+
+	if (secp256k1_ec_pubkey_serialize(ctx, compressedkey, &compressedkeylen,
+	            &pubkeyt, SECP256K1_EC_COMPRESSED) != 1) {
+		return error_result(env, "Public key compression error");
+	}
+
+	return ok_result(env, &r);
+}
 
 static ERL_NIF_TERM
 ec_pubkey_decompress(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
@@ -776,6 +807,7 @@ static ErlNifFunc nif_funcs[] = {
 	{"rand256", 0, rand256},
 	{"ec_seckey_verify", 1, ec_seckey_verify},
 	{"ec_pubkey_create", 2, ec_pubkey_create},
+	{"ec_pubkey_compress", 1, ec_pubkey_compress},
 	{"ec_pubkey_decompress", 1, ec_pubkey_decompress},
 	{"ec_pubkey_verify", 1, ec_pubkey_verify},
 	{"ec_privkey_export", 2, ec_privkey_export},
