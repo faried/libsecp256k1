@@ -24,6 +24,26 @@ create_keys() ->
 	?assertEqual(ok, libsecp256k1:ec_pubkey_verify(B)),
 	?assertEqual(ok, libsecp256k1:ec_pubkey_verify(C)).
 
+%% compressing a compressed pubkey should be a no-op
+compress_pubkeys() ->
+	A = crypto:strong_rand_bytes(32), %% Should use strong_rand in production
+	{ok, B} = libsecp256k1:ec_pubkey_create(A, compressed),
+	{ok, B2} = libsecp256k1:ec_pubkey_create(A, uncompressed),
+	{ok, C} = libsecp256k1:ec_pubkey_compress(B),
+	{ok, D} = libsecp256k1:ec_pubkey_compress(B2),
+	?assertEqual(B, C),
+	?assertEqual(B, D).
+
+%% decompressing an uncompressed pubkey should be a no-op
+decompress_pubkeys() ->
+	A = crypto:strong_rand_bytes(32), %% Should use strong_rand in production
+	{ok, B} = libsecp256k1:ec_pubkey_create(A, compressed),
+	{ok, B2} = libsecp256k1:ec_pubkey_create(A, uncompressed),
+	{ok, C} = libsecp256k1:ec_pubkey_decompress(B),
+	{ok, D} = libsecp256k1:ec_pubkey_decompress(B2),
+	?assertEqual(B2, C),
+	?assertEqual(B2, D).
+
 invalid_keys() ->
 	A = crypto:strong_rand_bytes(16),
 	?assertMatch({error, _Msg}, libsecp256k1:ec_pubkey_create(A, compressed)),
@@ -76,12 +96,14 @@ sha256() ->
 	?assertEqual(DoubleHashed, libsecp256k1:sha256(libsecp256k1:sha256(A))),
 	?assertEqual(DoubleHashed, libsecp256k1:dsha256(A)).
 
-secp256k1_test_() -> 
+secp256k1_test_() ->
   {setup,
   fun start/0,
   fun stop/1,
    [
 		{"Create keys", fun create_keys/0},
+		{"Compress keys", fun compress_pubkeys/0},
+		{"Decompress keys", fun decompress_pubkeys/0},
 		{"Invalid keys", fun invalid_keys/0},
 		{"Import export", fun import_export/0},
 		{"Curve tweaks", fun tweaks/0},
